@@ -6,7 +6,7 @@ import requests
 
 # ---------- CONFIG ----------
 
-URL = "https://sailgpt.tekdinext.com"
+URL = "https://sailgpt.tekdinext.com999"
 
 BASELINE_SIZE = 1145          # bytes
 BASELINE_TIME = 0.21          # seconds
