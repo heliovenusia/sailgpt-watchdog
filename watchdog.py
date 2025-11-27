@@ -1,12 +1,13 @@
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 
 # ---------- CONFIG ----------
 
-URL = "https://sailgpt.tekdinext.com999"
+URL = "https://sailgpt.tekdinext.com"
+IST_OFFSET = timedelta(hours=5, minutes=30)
 
 BASELINE_SIZE = 1145          # bytes
 BASELINE_TIME = 0.21          # seconds
@@ -23,8 +24,8 @@ TG_CHAT_IDS = [cid.strip() for cid in os.getenv("TG_CHAT_IDS", "").split(",") if
 # ---------- HELPERS ----------
 
 def now_str():
-    # You are in IST; this is just a label, not a TZ conversion
-    return datetime.now().strftime("%d %b %Y, %H:%M IST")
+    ist_time = datetime.utcnow() + IST_OFFSET
+    return ist_time.strftime("%d %b %Y, %H:%M IST")
 
 def classify(status_code, size_bytes, time_sec, error=None):
     """
