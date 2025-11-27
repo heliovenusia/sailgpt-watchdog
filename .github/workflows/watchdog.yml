@@ -1,0 +1,65 @@
+name: SAILGPT WatchDog
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour at minute 0
+  workflow_dispatch:
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run WatchDog
+        id: run_watchdog
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT_IDS: ${{ secrets.TG_CHAT_IDS }}
+        run: |
+          python watchdog.py > watchdog_output.txt
+
+          # Extract state line (e.g. "STATE: GOOD")
+          state=$(grep '^STATE:' watchdog_output.txt | awk '{print $2}')
+          if [ -z "$state" ]; then
+            state="UNKNOWN"
+          fi
+
+          # Build email body = everything except STATE line
+          body=$(grep -v '^STATE:' watchdog_output.txt)
+
+          # Escape for GitHub output
+          body="${body//'%'/'%25'}"
+          body="${body//$'\n'/'%0A'}"
+          body="${body//$'\r'/'%0D'}"
+
+          echo "state=$state" >> $GITHUB_OUTPUT
+          echo "body=$body" >> $GITHUB_OUTPUT
+
+          echo "Detected state: $state"
+
+      - name: Send email on ABNORMAL or DOWN
+        if: steps.run_watchdog.outputs.state != 'GOOD'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.MAIL_USER }}
+          password: ${{ secrets.MAIL_PASS }}
+          subject: "SAILGPT WatchDog alert - ${{ steps.run_watchdog.outputs.state }}"
+          to: ${{ secrets.ALERT_EMAILS }}
+          from: "SAILGPT WatchDog <${{ secrets.MAIL_USER }}>"
+          content_type: text/plain
+          body: ${{ steps.run_watchdog.outputs.body }}
