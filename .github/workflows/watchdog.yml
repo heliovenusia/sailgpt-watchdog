@@ -50,13 +50,12 @@ jobs:
 
           echo "Detected state: $state"
 
-            - name: Send email on ABNORMAL or DOWN
+      - name: Send email on ABNORMAL or DOWN
         if: steps.run_watchdog.outputs.state != 'GOOD'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
+          server_port: 587
           username: ${{ secrets.MAIL_USER }}
           password: ${{ secrets.MAIL_PASS }}
           subject: "SAILGPT WatchDog alert - ${{ steps.run_watchdog.outputs.state }}"
@@ -64,4 +63,3 @@ jobs:
           from: "SAILGPT WatchDog <${{ secrets.MAIL_USER }}>"
           content_type: text/plain
           body: ${{ steps.run_watchdog.outputs.body }}
-
