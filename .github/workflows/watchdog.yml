@@ -2,7 +2,7 @@ name: SAILGPT WatchDog
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour at minute 0
+    - cron: '17 * * * *' 
   workflow_dispatch:
 
 jobs:
@@ -31,16 +31,15 @@ jobs:
         run: |
           python watchdog.py > watchdog_output.txt
 
-          # Extract state line (e.g. "STATE: GOOD")
           state=$(grep '^STATE:' watchdog_output.txt | awk '{print $2}')
           if [ -z "$state" ]; then
             state="UNKNOWN"
           fi
 
-          # Build email body = everything except STATE line
+          
           body=$(grep -v '^STATE:' watchdog_output.txt)
 
-          # Escape for GitHub output
+          
           body="${body//'%'/'%25'}"
           body="${body//$'\n'/'%0A'}"
           body="${body//$'\r'/'%0D'}"

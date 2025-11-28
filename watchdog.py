@@ -4,24 +4,16 @@ from datetime import datetime, timedelta
 
 import requests
 
-# ---------- CONFIG ----------
-
 URL = "https://sailgpt.tekdinext.com"
 IST_OFFSET = timedelta(hours=5, minutes=30)
-
 BASELINE_SIZE = 1145          # bytes
 BASELINE_TIME = 0.21          # seconds
-
 SIZE_LOW = 900                # GOOD if size in [SIZE_LOW, SIZE_HIGH]
 SIZE_HIGH = 1400
-
 SLOW_FACTOR = 2.0             # ABNORMAL if time > BASELINE_TIME * SLOW_FACTOR
 SLOW_THRESHOLD = BASELINE_TIME * SLOW_FACTOR  # ~0.42s
-
 TG_TOKEN = os.getenv("TG_TOKEN")
 TG_CHAT_IDS = [cid.strip() for cid in os.getenv("TG_CHAT_IDS", "").split(",") if cid.strip()]
-
-# ---------- HELPERS ----------
 
 def now_str():
     ist_time = datetime.utcnow() + IST_OFFSET
@@ -35,7 +27,7 @@ def classify(status_code, size_bytes, time_sec, error=None):
     if error is not None or status_code is None or status_code != 200:
         return "DOWN", "ERROR"
 
-    # Status 200 → check size and time
+    # Status 200 = check size and time
     if size_bytes < SIZE_LOW or size_bytes > SIZE_HIGH:
         return "ABNORMAL", "CONTENT"
 
@@ -75,7 +67,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
                 "SAILGPT WatchDog: ABNORMAL (CONTENT)",
                 "SailGPT is reachable, but the page content is unusual compared to normal.",
                 f"Last check: {ts}",
-                f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes) → {pct_txt}.",
+                f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes) = {pct_txt}.",
                 "This may indicate an error page or backend issue. Please verify manually by logging in and sending a test prompt."
             ]
             return "\n".join(lines)
@@ -83,7 +75,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
         if reason_tag == "SLOW":
             if time_sec and BASELINE_TIME:
                 factor = time_sec / BASELINE_TIME
-                factor_txt = f"{factor:.1f}× slower than normal"
+                factor_txt = f"{factor:.1f}X slower than normal"
             else:
                 factor_txt = "slower than normal"
 
@@ -91,9 +83,9 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
                 "SAILGPT WatchDog: ABNORMAL (SLOW)",
                 "SailGPT is reachable, but slower than usual.",
                 f"Last check: {ts}",
-                f"Response time: {time_txt} (normal ~{BASELINE_TIME:.2f} s) → {factor_txt}.",
+                f"Response time: {time_txt} (normal ~{BASELINE_TIME:.2f} s) = {factor_txt}.",
                 f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes).",
-                "System is up, but performance is degraded. Please monitor and escalate if users report issues."
+                "System is up, but performance is degraded. My please monitor and escalate if users report issues."
             ]
             return "\n".join(lines)
 
@@ -116,7 +108,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
         "SailGPT is not reachable.",
         f"Last check: {ts}",
         f"Error: {err_txt}.",
-        "This indicates an outage at the portal/infra level. Please check with Tekdinext/IT.",
+        "This indicates an outage at the portal/infra level.",
     ]
     return "\n".join(lines)
 
@@ -133,11 +125,11 @@ def send_telegram(message):
                 params={"chat_id": cid, "text": message},
                 timeout=5,
             )
-            # Optional: check resp.json(), but we won't fail the run if one chat fails
+            
         except Exception as e:
             print(f"WARNING: Telegram send failed for {cid}: {e}", flush=True)
 
-# ---------- MAIN ----------
+
 
 def main():
     status_code = None
@@ -157,13 +149,11 @@ def main():
     state, reason_tag = classify(status_code, size_bytes, time_sec, error)
     message = build_message(state, reason_tag, status_code, size_bytes, time_sec, error)
 
-    # Print full message (for logs & email body)
+   
     print(message)
-    print()  # blank line
-    # Final line for GitHub Actions to parse:
+    print("  ") 
     print(f"STATE: {state}")
 
-    # Phase 1: Send Telegram EVERY HOUR regardless of state
     send_telegram(message)
 
 
