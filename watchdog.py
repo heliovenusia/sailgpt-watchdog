@@ -53,7 +53,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
             f"Response time: {time_txt} (normal ~{BASELINE_TIME:.2f} s)",
             f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes)",
         ]
-        return "\n".join(lines)
+        return "  ".join(lines)
 
     if state == "ABNORMAL":
         if reason_tag == "CONTENT":
@@ -70,7 +70,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
                 f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes) = {pct_txt}.",
                 "This may indicate an error page or backend issue. Please verify manually by logging in and sending a test prompt."
             ]
-            return "\n".join(lines)
+            return "  ".join(lines)
 
         if reason_tag == "SLOW":
             if time_sec and BASELINE_TIME:
@@ -85,9 +85,9 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
                 f"Last check: {ts}",
                 f"Response time: {time_txt} (normal ~{BASELINE_TIME:.2f} s) = {factor_txt}.",
                 f"Page size: {size_txt} (normal ~{BASELINE_SIZE} bytes).",
-                "System is up, but performance is degraded. My please monitor and escalate if users report issues."
+                "System is up, but performance is degraded. May please monitor and escalate if users report issues."
             ]
-            return "\n".join(lines)
+            return "  ".join(lines)
 
         # Fallback ABNORMAL
         lines = [
@@ -99,7 +99,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
             f"Page size: {size_txt}",
             "Please verify manually."
         ]
-        return "\n".join(lines)
+        return "  ".join(lines)
 
     # DOWN
     err_txt = error if error else f"HTTP {status_code}" if status_code is not None else "Unknown error"
@@ -110,7 +110,7 @@ def build_message(state, reason_tag, status_code, size_bytes, time_sec, error):
         f"Error: {err_txt}.",
         "This indicates an outage at the portal/infra level.",
     ]
-    return "\n".join(lines)
+    return "  ".join(lines)
 
 def send_telegram(message):
     if not TG_TOKEN or not TG_CHAT_IDS:
@@ -154,8 +154,9 @@ def main():
     print("  ") 
     print(f"STATE: {state}")
 
-    send_telegram(message)
-
+    if state != "GOOD":
+        send_telegram(message)
+    
 
 if __name__ == "__main__":
     main()
